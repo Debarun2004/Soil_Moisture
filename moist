@@ -1,36 +1,81 @@
-import RPi.GPIO as GPIO
+from RPLCD.i2c import CharLCD
 import time
 
-SOIL_SENSOR_PIN = 17
-RELAY_PIN = 27
-SOIL_MOISTURE_THRESHOLD = 500
+import board #for DHT22
+import adafruit_dht #for DHT22
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(SOIL_SENSOR_PIN, GPIO.IN)
-GPIO.setup(RELAY_PIN, GPIO.OUT)
+import serial #for pH sensor
 
-GPIO.output(RELAY_PIN, GPIO.LOW)
 
-def read_soil_moisture():
-    return GPIO.input(SOIL_SENSOR_PIN)
+SOIL_SENSOR_PIN = 17# for soil moisture sensor
+RELAY_PIN=27# for relay module
+#Set up GPIO pins
+GPIO.setmode(GPIO.BCM)#Using BCM pin numbering
+GPIO.setup(SOIL_SENSOR_PIN,GPIO.IN)# to set pin 17 for input
+GPIO.setup(RELAY_PIN,GPIO.OUT)# to set pin 27 for output
+GPIO.output(RELAY_PIN,GPIO.HIGH)#Ensure that the pump is off initially
 
+lcd=CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=16, rows=2, dotsize=8, auto_linebreaks=True)
+lcd.clear()
+
+def read_temp_humid():
+	dht_sensor= adafruit_dht.DHT22(board.D24)
+	
+	temperature=dht_sensor.temperature
+	humidity=dht_sensor.humidity
+	return temperature,humidity
+	
+def read_pH():
+	port = '/dev/ttyACM0'  
+	baud_rate = 9600
+	
+	arduino = serial.Serial(port, baud_rate, timeout=1) 
+	time.sleep(2)  # Wait for connection to establish
+	
+	while True:
+		data = arduino.readline().decode('utf-8').strip()  # Read data
+		if data:
+			return data 
+			
+def read_moisture():
+	Dry=22000
+	Wet=10000
+	raw=GPIO.input(SOIL_SENSOR_PIN)
+	moist=100-((raw-Wet)/(Dry-Wet)*100)
+	Moist=max(0,min(100,moist))
+	return raw,Moist
+	
+def predict_crop(pH,Moist,temp,humid):
+	model=joblib.load("knn_model.pkl")
+	test=[pH,Moist,temp,humid]
+	predict=model.predict(test)
+	return predict
+	
 def control_pump(state):
-    if state:
-        print("Soil is dry!! Turning on the pump...")
-        GPIO.output(RELAY_PIN, GPIO.HIGH)
-    else:
-        print("Soil is wet. Turning off the pump...")
-        GPIO.output(RELAY_PIN, GPIO.LOW)
+	GPIO.output(RELAY_PIN, GPIO.LOW)#Turn on the pump
+	time.sleep(3)#time for watering the plant
+	GPIO.output(RELAY_PIN, GPIO.HIGH)#Turn off the pump
+	
 
 try:
-    while True:
-        soil_moisture = read_soil_moisture()
-        if soil_moisture == 0:
-            control_pump(True)
-        else:
-            control_pump(False)
-        time.sleep(5)
+	while True:
+		temp,humid=read_temp_humid()
+		lcd.write_string(f'Temp:{temp}C Humid%{humid}')
+		time.sleep(4)
+		lcd.clear()
+		ph=read_pH()
+		lcd.write_string(f'ph Value{pH}')
+		time.sleep(4)
+		lcd.clear()
+		raw,Moist=read_moisture()
+		lcd.write_string(f'Moisture:{Moist:.2f}%')
+		time.sleep(4)
+		lcd.clear()
+		predict=predict_crop(pH,Moist,temp,humid)
+		lcd.write_string(predict, 'Soil')
+		time.sleep(4)
+		lcd.clear()
+		if predict=='Moderately Suitable':
+			control_pump(raw)
 except KeyboardInterrupt:
-    print("Program terminated by user.")
-finally:
-    GPIO.cleanup()
+	print('Terminating......')
