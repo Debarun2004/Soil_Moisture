@@ -9,9 +9,6 @@ Welcome to the repository for the **AI-Driven Smart Irrigation & Crop Suitabilit
 
 [![Watch on Google Drive](https://img.shields.io/badge/Watch%20Demo-Google%20Drive-blue?logo=google-drive)](https://drive.google.com/file/d/1z4FhQ-K3q2XhB8Lv2uIuqx6dO0zdjcXn/view?usp=drive_link)
 
-
-> *(Video coming soon — stay tuned!)*
-
 ---
 
 ## 🚀 Project Overview
