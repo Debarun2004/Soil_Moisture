@@ -69,7 +69,4 @@ This system is built using **Raspberry Pi 3B+** and **Arduino Uno**, along with 
 - **Matplotlib / Seaborn** (Optional visualizations)
 - **Raspberry Pi GPIO / Serial** (I/O & Communication)
 
----
-
-## 📦 Folder Structure (suggested)
 
