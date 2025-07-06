@@ -1,3 +1,4 @@
+![logo](https://github.com/Debarun2004/Soil_Moisture/blob/main/soil_moisture_banner.png)
 # 🌾 AI-Driven Smart Irrigation & Crop Suitability Prediction System 🤖💧
 
 Welcome to the repository for the **AI-Driven Smart Irrigation & Crop Suitability Prediction System** — a smart agriculture project that leverages **Machine Learning** and **IoT** to automate watering and recommend crops based on soil conditions. 🌱
